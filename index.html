@@ -3,87 +3,303 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Kumejima_All AR</title>
+  <title>AR Avatars (iOS/Android)</title>
 
-  <!-- model-viewer 本体（CDN） -->
+  <!-- model-viewer 本体（CDN）-->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
   <style>
-    body { margin:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
-    model-viewer { width: 100%; height: 70vh; background: #f6f6f6; border-radius: 12px; }
-    .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-    button { padding:10px 14px; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
-    .note { color:#444; font-size: 14px; line-height:1.6; margin-top:12px; }
+    :root { color-scheme: light dark; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans JP, sans-serif; }
+    header, footer { padding: 12px 16px; }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .grid {
+      display: flex;
+      flex-wrap: nowrap;         /* 1列に並べる */
+      overflow-x: auto;          /* 画面が狭い時は横スクロール */
+      gap: 12px;
+      padding: 12px 16px;
+    }
+    .card {
+      min-width: 280px;
+      width: 25vw;               /* 4体横並び想定。画面幅に応じて調整 */
+      max-width: 420px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+      overflow: hidden;
+      background: canvas;
+      display: flex;
+      flex-direction: column;
+    }
+    model-viewer {
+      width: 100%;
+      height: 360px;
+      background: #f5f5f7;
+    }
+    .card header {
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      appearance: none; border: 1px solid #ccc; background: #fff;
+      padding: 6px 10px; border-radius: 10px; font-size: 12px; cursor: pointer;
+    }
+    .btn:active { transform: translateY(1px); }
+    .note { font-size: 12px; opacity: .7; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Kumejima_All - AR viewer</h1>
-
-    <!--
-      変更点：
-      - src と ios-src を Kumejima_All に統一
-      - alt も合わせて変更
-    -->
-    <model-viewer id="avatar"
-      src="Kumejima_All.glb"
-      ios-src="Kumejima_All.usdz"
-      alt="Kumejima_All avatar"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      camera-controls
-      autoplay
-      animation-loop
-      shadow-intensity="1"
-      exposure="1.0"
-      environment-image="neutral"
-      poster=""
-      touch-action="pan-y">
-      <!-- model-viewer が自動で AR ボタンを出します -->
-    </model-viewer>
-
+  <header>
     <div class="controls">
-      <button id="playAll">▶︎ Play all（順番に再生）</button>
-      <button id="pause">⏸ Pause</button>
-      <button id="resume">⏵ Resume</button>
-      <button id="reset">⟲ Reset</button>
+      <button id="playAll" class="btn">▶︎ Play all（全アバター）</button>
+      <button id="stopAll" class="btn">⏸ Stop all</button>
+      <span class="note">ARボタンから各端末のARで表示できます（iOSはUSDZ、AndroidはScene Viewer/WebXR）。</span>
     </div>
+  </header>
 
-    <p class="note">
-      • AndroidのARでは <code>Kumejima_All.glb</code> のアニメが再生されます。<br/>
-      • iPhoneのAR（Quick Look）では <code>Kumejima_All.usdz</code> のアニメが再生されます。<br/>
-      • ページ内の表示はGLBのままでOKです。
-    </p>
-  </div>
+  <main class="grid">
+    <!-- Yossan -->
+    <section class="card">
+      <header>
+        <span>Yossan</span>
+        <span class="note" data-status="Yossan">—</span>
+      </header>
+      <model-viewer
+        id="mv-Yossan"
+        src="Yossan.glb"
+        ios-src="Yossan.usdz"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="fixed"
+        camera-controls
+        autoplay="false"
+        animation-loop="false"
+        exposure="1"
+        shadow-intensity="0.8"
+        touch-action="pan-y"
+        disable-zoom
+        environment-image="legacy"
+      >
+        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
+      </model-viewer>
+      <div style="display:flex; gap:8px; padding:10px 12px;">
+        <button class="btn" data-single-play="mv-Yossan">▶︎ このアバター再生</button>
+        <button class="btn" data-single-stop="mv-Yossan">⏸ 停止</button>
+      </div>
+    </section>
+
+    <!-- Atsushi -->
+    <section class="card">
+      <header>
+        <span>Atsushi</span>
+        <span class="note" data-status="Atsushi">—</span>
+      </header>
+      <model-viewer
+        id="mv-Atsushi"
+        src="Atsushi.glb"
+        ios-src="Atsushi.usdz"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="fixed"
+        camera-controls
+        autoplay="false"
+        animation-loop="false"
+        exposure="1"
+        shadow-intensity="0.8"
+        touch-action="pan-y"
+        disable-zoom
+        environment-image="legacy"
+      >
+        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
+      </model-viewer>
+      <div style="display:flex; gap:8px; padding:10px 12px;">
+        <button class="btn" data-single-play="mv-Atsushi">▶︎ このアバター再生</button>
+        <button class="btn" data-single-stop="mv-Atsushi">⏸ 停止</button>
+      </div>
+    </section>
+
+    <!-- Shun -->
+    <section class="card">
+      <header>
+        <span>Shun</span>
+        <span class="note" data-status="Shun">—</span>
+      </header>
+      <model-viewer
+        id="mv-Shun"
+        src="Shun.glb"
+        ios-src="Shun.usdz"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="fixed"
+        camera-controls
+        autoplay="false"
+        animation-loop="false"
+        exposure="1"
+        shadow-intensity="0.8"
+        touch-action="pan-y"
+        disable-zoom
+        environment-image="legacy"
+      >
+        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
+      </model-viewer>
+      <div style="display:flex; gap:8px; padding:10px 12px;">
+        <button class="btn" data-single-play="mv-Shun">▶︎ このアバター再生</button>
+        <button class="btn" data-single-stop="mv-Shun">⏸ 停止</button>
+      </div>
+    </section>
+
+    <!-- Yuki -->
+    <section class="card">
+      <header>
+        <span>Yuki</span>
+        <span class="note" data-status="Yuki">—</span>
+      </header>
+      <model-viewer
+        id="mv-Yuki"
+        src="Yuki.glb"
+        ios-src="Yuki.usdz"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-scale="fixed"
+        camera-controls
+        autoplay="false"
+        animation-loop="false"
+        exposure="1"
+        shadow-intensity="0.8"
+        touch-action="pan-y"
+        disable-zoom
+        environment-image="legacy"
+      >
+        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
+      </model-viewer>
+      <div style="display:flex; gap:8px; padding:10px 12px;">
+        <button class="btn" data-single-play="mv-Yuki">▶︎ このアバター再生</button>
+        <button class="btn" data-single-stop="mv-Yuki">⏸ 停止</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span class="note">「▶︎ Play all」は各アバターに含まれる<strong>全アニメーションを順番に</strong>再生し、最後まで再生したら最初に戻って繰り返します。</span>
+  </footer>
 
   <script>
-    const mv = document.querySelector('#avatar');
-    const btnPlayAll = document.querySelector('#playAll');
-    const btnPause = document.querySelector('#pause');
-    const btnResume = document.querySelector('#resume');
-    const btnReset = document.querySelector('#reset');
+    // --- 再生コントローラ ---
+    class AnimationCycler {
+      /**
+       * @param {HTMLModelViewerElement} mv
+       * @param {HTMLElement} statusEl
+       */
+      constructor(mv, statusEl) {
+        this.mv = mv;
+        this.statusEl = statusEl;
+        this.animations = [];
+        this.index = 0;
+        this.running = false;
 
-    // 「全アニメ順次再生」を実装（availableAnimations を巡回）
-    let anims = [];
-    let idx = 0;
-    let playingAll = false;
+        // アニメーション終了時に次へ
+        this.onFinished = () => {
+          if (!this.running) return;
+          this.next();
+        };
 
-    function playNext() {
-      if (!playingAll || anims.length === 0) return;
-      const name = anims[idx % anims.length];
-      mv.animationName = name;
-      // 1回だけ再生し、終了イベントで次へ
-      mv.play({ repetitions: 1 });
+        // モデル読み込み後にアニメーション一覧取得
+        mv.addEventListener('load', () => {
+          this.animations = mv.availableAnimations || [];
+          this.updateStatus();
+        });
+
+        mv.addEventListener('finished', this.onFinished);
+      }
+
+      updateStatus(text) {
+        if (!this.statusEl) return;
+        if (text) {
+          this.statusEl.textContent = text;
+        } else if (!this.animations.length) {
+          this.statusEl.textContent = 'アニメーションなし';
+        } else if (this.running) {
+          this.statusEl.textContent = `再生中：${this.animations[this.index]}`;
+        } else {
+          this.statusEl.textContent = `準備OK（${this.animations.length}個）`;
+        }
+      }
+
+      async playAll() {
+        if (!this.animations.length) {
+          // 未ロードのケースに軽く再試行
+          await this.mv.updateComplete;
+          this.animations = this.mv.availableAnimations || [];
+          if (!this.animations.length) {
+            this.updateStatus('アニメーションが見つかりません');
+            return;
+          }
+        }
+        this.running = true;
+        this.index = this.index % this.animations.length;
+        this.mv.animationName = this.animations[this.index];
+        this.mv.animationLoop = false; // 1回でfinishedイベントを受ける
+        this.mv.play();
+        this.updateStatus();
+      }
+
+      stop() {
+        this.running = false;
+        this.mv.pause();
+        this.updateStatus('停止中');
+      }
+
+      next() {
+        if (!this.running || !this.animations.length) return;
+        this.index = (this.index + 1) % this.animations.length;
+        this.mv.animationName = this.animations[this.index];
+        this.mv.animationLoop = false;
+        this.mv.currentTime = 0;
+        this.mv.play();
+        this.updateStatus();
+      }
     }
 
-    mv.addEventListener('load', () => {
-      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose'); // ありがちなTPoseは除外（必要なければ削除）
+    // --- 初期化 ---
+    const viewers = [
+      { id: 'mv-Yossan', label: 'Yossan' },
+      { id: 'mv-Atsushi', label: 'Atsushi' },
+      { id: 'mv-Shun',   label: 'Shun'   },
+      { id: 'mv-Yuki',   label: 'Yuki'   },
+    ];
+
+    const controllers = new Map();
+    for (const v of viewers) {
+      const mv = document.getElementById(v.id);
+      const statusEl = document.querySelector(`[data-status="${v.label}"]`);
+      controllers.set(v.id, new AnimationCycler(mv, statusEl));
+    }
+
+    // 個別再生/停止ボタン
+    document.querySelectorAll('[data-single-play]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-single-play');
+        controllers.get(id)?.playAll();
+      });
+    });
+    document.querySelectorAll('[data-single-stop]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-single-stop');
+        controllers.get(id)?.stop();
+      });
     });
 
-    mv.addEventListener('finished', () => {
-      if (!playingAll) return;
-      idx++;
-      playNext();
+    // 全体再生/停止
+    document.getElementById('playAll')?.addEventListener('click', () => {
+      controllers.forEach(c => c.playAll());
     });
-
-    btnPlayAll.addEventListener('click', () => {
+    document.getElementById('stopAll')?.addEventListener('click', () => {
+      controllers.forEach(c => c.stop());
+    });
+  </script>
+</body>
+</html>
