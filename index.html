@@ -1,231 +1,109 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0">
-  <title>AR Avatars (4体・同時アニメ)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Yuki AR</title>
+
+  <!-- model-viewer 本体（CDN） -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    html, body { margin:0; padding:0; height:100%; background:#000; }
-    #ui {
-      position: fixed; left: 0; right: 0; bottom: 0;
-      display: flex; gap: 8px; padding: 12px;
-      justify-content: center; align-items: center;
-      pointer-events: none;
-    }
-    .btn {
-      pointer-events: auto;
-      background: rgba(255,255,255,0.12);
-      color: #fff; border: 1px solid rgba(255,255,255,0.25);
-      padding: 10px 14px; border-radius: 12px; font-size: 14px;
-      backdrop-filter: blur(8px);
-    }
-    #hint {
-      position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-      color: #fff; background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 10px;
-      font-size: 14px; display:none;
-    }
-    #reticle {
-      position: fixed; left: 50%; top: 50%; width: 40px; height: 40px;
-      margin-left: -20px; margin-top: -20px; border: 2px solid #00e0ff; border-radius: 50%;
-      display: none; box-shadow: 0 0 10px #00e0ff;
-    }
-    #fallback {
-      position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; color:#fff;
-    }
-    a.ar-quicklook {
-      text-decoration: none;
-    }
+    body { margin:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+    model-viewer { width: 100%; height: 70vh; background: #f6f6f6; border-radius: 12px; }
+    .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    button { padding:10px 14px; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
+    .note { color:#444; font-size: 14px; line-height:1.6; margin-top:12px; }
   </style>
 </head>
 <body>
-  <div id="hint">平面を探しています… 見つかったらタップで4体を設置します</div>
-  <div id="reticle"></div>
-  <div id="ui">
-    <button id="startAR" class="btn">ARを開始</button>
-    <!-- iOS向け：4体まとめたUSDZをQuick Lookで開く（用意できる場合）-->
-    <a id="quickLookLink" class="btn ar-quicklook" rel="ar" href="AllAvatars.usdz" style="display:none;">
-      iOSで4体を表示（Quick Look）
-    </a>
-    <!-- 参考：各アバターを個別にQuick Lookで開く（任意）-->
-    <details class="btn" style="background:rgba(255,255,255,0.06);">
-      <summary>個別表示（iOS Quick Look）</summary>
-      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-        <a rel="ar" href="Yossan.usdz" class="btn">Yossan</a>
-        <a rel="ar" href="Atsushi.usdz" class="btn">Atsushi</a>
-        <a rel="ar" href="Shun.usdz" class="btn">Shun</a>
-        <a rel="ar" href="Yuki.usdz" class="btn">Yuki</a>
-      </div>
-    </details>
+  <div class="wrap">
+    <h1>Yuki - AR viewer</h1>
+
+    <!--
+      ポイント：
+      - src: GLB（ページ内＆Android向け）
+      - ios-src: iOS AR用のUSDZ（ユーザー提供: AllAvatars.usdz）
+      - ar: ARボタン有効化
+      - ar-modes: WebXR/Scene Viewer/Quick Look を指定
+      - autoplay: 単一アニメの自動再生
+      - animation-loop: ループ
+    -->
+    <model-viewer id="yuki"
+      src="Yuki.glb"
+      ios-src="Yuki_02.usdz"
+      alt="Yuki avatar"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      autoplay
+      animation-loop
+      shadow-intensity="1"
+      exposure="1.0"
+      environment-image="neutral"
+      poster=""
+      touch-action="pan-y">
+      <!-- model-viewer が自動で AR ボタンを出します -->
+    </model-viewer>
+
+    <div class="controls">
+      <button id="playAll">▶︎ Play all（順番に再生）</button>
+      <button id="pause">⏸ Pause</button>
+      <button id="resume">⏵ Resume</button>
+      <button id="reset">⟲ Reset</button>
+    </div>
+
+    <p class="note">
+      • AndroidのARではGLBのアニメが再生されます。<br/>
+      • iPhoneのAR（Quick Look）では <code>AllAvatars.usdz</code> のアニメが再生されます。<br/>
+      • ページ内の表示はGLBのままでOKです。
+    </p>
   </div>
-  <div id="fallback" style="display:none;">お使いのブラウザはWebXR ARに未対応です（iOSはQuick Lookボタンをご利用ください）。</div>
 
-  <!-- Three.js (module) CDN -->
-  <script type="module">
-    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-    import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-    import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
+  <script>
+    const mv = document.querySelector('#AllAvatars');
+    const btnPlayAll = document.querySelector('#playAll');
+    const btnPause = document.querySelector('#pause');
+    const btnResume = document.querySelector('#resume');
+    const btnReset = document.querySelector('#reset');
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // 「全アニメ順次再生」を実装（availableAnimations を巡回）
+    let anims = [];
+    let idx = 0;
+    let playingAll = false;
 
-    const canvasContainer = document.body;
-    const hintEl = document.getElementById('hint');
-    const reticleEl = document.getElementById('reticle');
-    const startBtn = document.getElementById('startAR');
-    const quickLookLink = document.getElementById('quickLookLink');
-    const fallbackMsg = document.getElementById('fallback');
-
-    // iOS配慮：Quick Lookボタンを露出
-    if (isIOS) {
-      quickLookLink.style.display = 'inline-block';
+    function playNext() {
+      if (!playingAll || anims.length === 0) return;
+      const name = anims[idx % anims.length];
+      mv.animationName = name;
+      // 1回だけ再生し、終了イベントで次へ
+      mv.play({ repetitions: 1 });
     }
 
-    // Three.js 基本セットアップ
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.xr.enabled = true;
-    canvasContainer.appendChild(renderer.domElement);
+    mv.addEventListener('load', () => {
+      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose'); // ありがちなTPoseは除外（必要なければ削除）
+      // 1つしかない場合は通常のautoplay/loopに任せる
+    });
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera();
+    mv.addEventListener('finished', () => {
+      if (!playingAll) return;
+      idx++;
+      playNext();
+    });
 
-    // 環境光 & 方向光
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.0));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    dirLight.position.set(0, 5, 5);
-    scene.add(dirLight);
+    btnPlayAll.addEventListener('click', () => {
+      if (!anims.length) { mv.play(); return; } // クリップ1本なら普通に再生
+      playingAll = true;
+      idx = 0;
+      playNext();
+    });
 
-    // 平面ヒットテスト用のReticle（実体）
-    const reticle = new THREE.Mesh(
-      new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI/2),
-      new THREE.MeshBasicMaterial({ color: 0x00e0ff })
-    );
-    reticle.matrixAutoUpdate = false;
-    reticle.visible = false;
-    scene.add(reticle);
-
-    let xrHitTestSource = null;
-    let localSpace = null;
-    let placed = false;
-
-    // アバター4体を載せるグループ
-    const group = new THREE.Group();
-    scene.add(group);
-
-    // アニメーション用
-    const mixers = [];
-
-    // GLBを読み込み、横一列に配置＆アニメ再生
-    async function loadAvatars() {
-      const loader = new GLTFLoader();
-      const files = [
-        { name: 'Yossan', src: 'Yossan.glb' },
-        { name: 'Atsushi', src: 'Atsushi.glb' },
-        { name: 'Shun',    src: 'Shun.glb' },
-        { name: 'Yuki',    src: 'Yuki.glb' },
-      ];
-      // 並びのオフセット（必要に応じて調整）
-      const spacing = 0.8; // 体と体の間隔
-      const startX = -((files.length - 1) * spacing) / 2;
-
-      for (let i = 0; i < files.length; i++) {
-        const f = files[i];
-        const gltf = await loader.loadAsync(f.src);
-        const avatar = gltf.scene;
-        // スケールはモデルに合わせて調整（必要なら変更）
-        avatar.scale.set(1, 1, 1);
-        avatar.position.set(startX + i * spacing, 0, 0);
-        group.add(avatar);
-
-        // アニメーションが入っていれば全部ループ再生
-        if (gltf.animations && gltf.animations.length > 0) {
-          const mixer = new THREE.AnimationMixer(avatar);
-          gltf.animations.forEach((clip) => {
-            const action = mixer.clipAction(clip);
-            action.loop = THREE.LoopRepeat;
-            action.clampWhenFinished = false;
-            action.play();
-          });
-          mixers.push(mixer);
-        }
-      }
-    }
-
-    // 時間更新
-    const clock = new THREE.Clock();
-
-    // AR開始処理
-    async function startAR() {
-      // WebXR AR対応チェック
-      const supported = await navigator.xr?.isSessionSupported?.('immersive-ar');
-      if (!supported) {
-        // iOSはQuick Lookへ誘導、その他は非対応メッセージ
-        if (!isIOS) fallbackMsg.style.display = 'flex';
-        return;
-      }
-
-      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
-
-      await loadAvatars();
-
-      renderer.setAnimationLoop((timestamp, frame) => {
-        const dt = clock.getDelta();
-        mixers.forEach(m => m.update(dt));
-
-        if (frame) {
-          const session = renderer.xr.getSession();
-          if (!xrHitTestSource) {
-            session.requestReferenceSpace('viewer').then((refSpace) => {
-              session.requestHitTestSource({ space: refSpace }).then((source) => {
-                xrHitTestSource = source;
-              });
-            });
-            session.requestReferenceSpace('local').then((refSpace) => {
-              localSpace = refSpace;
-            });
-          }
-
-          if (xrHitTestSource && localSpace) {
-            const hitTestResults = frame.getHitTestResults(xrHitTestSource);
-            if (hitTestResults.length > 0 && !placed) {
-              const hit = hitTestResults[0];
-              const pose = hit.getPose(localSpace);
-              reticle.visible = true;
-              reticle.matrix.fromArray(pose.transform.matrix);
-              reticleEl.style.display = 'block';
-              hintEl.style.display = 'block';
-            } else {
-              reticle.visible = false;
-              reticleEl.style.display = 'none';
-            }
-          }
-        }
-
-        renderer.render(scene, camera);
-      });
-
-      // タップで配置
-      renderer.domElement.addEventListener('click', () => {
-        if (!placed && reticle.visible) {
-          group.visible = true;
-          group.position.setFromMatrixPosition(reticle.matrix);
-          group.quaternion.setFromRotationMatrix(reticle.matrix);
-          placed = true;
-          hintEl.style.display = 'none';
-          reticleEl.style.display = 'none';
-        }
-      });
-
-      // 初期状態は非表示（配置時に出す）
-      group.visible = false;
-    }
-
-    startBtn.addEventListener('click', startAR);
-
-    // リサイズ
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    btnPause.addEventListener('click', () => { mv.pause(); });
+    btnResume.addEventListener('click', () => { mv.play(); });
+    btnReset.addEventListener('click', () => {
+      playingAll = false;
+      mv.currentTime = 0;
+      mv.pause();
     });
   </script>
 </body>
