@@ -3,36 +3,53 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Yuki AR</title>
-
+  <title>Sample AR</title>
   <!-- model-viewer 本体（CDN） -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body { margin:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
-    model-viewer { width: 100%; height: 70vh; background: #f6f6f6; border-radius: 12px; }
-    .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-    button { padding:10px 14px; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
-    .note { color:#444; font-size: 14px; line-height:1.6; margin-top:12px; }
+    body {
+      margin:0;
+      font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    model-viewer {
+      width: 100%;
+      height: 70vh;
+      background: #f6f6f6;
+      border-radius: 12px;
+    }
+    .controls {
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+    button {
+      padding:10px 14px;
+      border-radius:8px;
+      border:1px solid #ddd;
+      cursor:pointer;
+    }
+    .note {
+      color:#444;
+      font-size: 14px;
+      line-height:1.6;
+      margin-top:12px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Yuki - AR viewer</h1>
-
-    <!--
-      ポイント：
-      - src: GLB（ページ内＆Android向け）
-      - ios-src: iOS AR用のUSDZ（ユーザー提供: AllAvatars.usdz）
-      - ar: ARボタン有効化
-      - ar-modes: WebXR/Scene Viewer/Quick Look を指定
-      - autoplay: 単一アニメの自動再生
-      - animation-loop: ループ
-    -->
+    <h1>Sample - AR viewer</h1>
+    <!-- GLBとUSDZのファイル名を変更済み -->
     <model-viewer id="yuki"
-      src="Yuki.glb"
-      ios-src="Yuki_02.usdz"
-      alt="Yuki avatar"
+      src="Sample.glb"
+      ios-src="Sample.usdz"
+      alt="Sample avatar"
       ar
       ar-modes="webxr scene-viewer quick-look"
       camera-controls
@@ -43,7 +60,6 @@
       environment-image="neutral"
       poster=""
       touch-action="pan-y">
-      <!-- model-viewer が自動で AR ボタンを出します -->
     </model-viewer>
 
     <div class="controls">
@@ -55,19 +71,19 @@
 
     <p class="note">
       • AndroidのARではGLBのアニメが再生されます。<br/>
-      • iPhoneのAR（Quick Look）では <code>AllAvatars.usdz</code> のアニメが再生されます。<br/>
+      • iPhoneのAR（Quick Look）では <code>Sample.usdz</code> のアニメが再生されます。<br/>
       • ページ内の表示はGLBのままでOKです。
     </p>
   </div>
 
   <script>
-    const mv = document.querySelector('#AllAvatars');
+    const mv = document.querySelector('#yuki');
     const btnPlayAll = document.querySelector('#playAll');
     const btnPause = document.querySelector('#pause');
     const btnResume = document.querySelector('#resume');
     const btnReset = document.querySelector('#reset');
 
-    // 「全アニメ順次再生」を実装（availableAnimations を巡回）
+    // 「全アニメ順次再生」を実装
     let anims = [];
     let idx = 0;
     let playingAll = false;
@@ -76,13 +92,11 @@
       if (!playingAll || anims.length === 0) return;
       const name = anims[idx % anims.length];
       mv.animationName = name;
-      // 1回だけ再生し、終了イベントで次へ
       mv.play({ repetitions: 1 });
     }
 
     mv.addEventListener('load', () => {
-      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose'); // ありがちなTPoseは除外（必要なければ削除）
-      // 1つしかない場合は通常のautoplay/loopに任せる
+      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose');
     });
 
     mv.addEventListener('finished', () => {
@@ -92,7 +106,10 @@
     });
 
     btnPlayAll.addEventListener('click', () => {
-      if (!anims.length) { mv.play(); return; } // クリップ1本なら普通に再生
+      if (!anims.length) {
+        mv.play();
+        return;
+      }
       playingAll = true;
       idx = 0;
       playNext();
