@@ -1,127 +1,33 @@
-<!doctype html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sample AR</title>
-  <!-- model-viewer 本体（CDN） -->
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <style>
-    body {
-      margin:0;
-      font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+<model-viewer id="mv"
+  src="Sample.glb"
+  ios-src="Sample.usdz"
+  ar ar-modes="webxr scene-viewer quick-look"
+  camera-controls
+  autoplay
+  /* animation-loop は付けない（1回だけ再生にする想定） */
+  >
+</model-viewer>
+<script>
+  const mv = document.querySelector('#mv');
+
+  // 1) モデル読み込み時に1回だけ再生
+  mv.addEventListener('load', () => {
+    // 明示的にクリップ名を指定したい場合は animationName をセット
+    // mv.animationName = 'AllCharacters';  // 例
+    mv.play({repetitions: 1});
+  });
+
+  // 2) ARセッション開始時にも明示的に再生（WebXRで有効）
+  mv.addEventListener('ar-status', (e) => {
+    if (e.detail.status === 'session-started') {
+      mv.play({repetitions: 1});
     }
-    .wrap {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
+  });
+
+  // 3) 念のため AR配置直後に止まる機種対策（短遅延で再度play）
+  mv.addEventListener('ar-status', (e) => {
+    if (e.detail.status === 'session-started') {
+      setTimeout(() => mv.play({repetitions: 1}), 300);
     }
-    model-viewer {
-      width: 100%;
-      height: 70vh;
-      background: #f6f6f6;
-      border-radius: 12px;
-    }
-    .controls {
-      display:flex;
-      gap:8px;
-      margin-top:12px;
-      flex-wrap:wrap;
-    }
-    button {
-      padding:10px 14px;
-      border-radius:8px;
-      border:1px solid #ddd;
-      cursor:pointer;
-    }
-    .note {
-      color:#444;
-      font-size: 14px;
-      line-height:1.6;
-      margin-top:12px;
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>Sample - AR viewer</h1>
-    <!-- GLBとUSDZのファイル名を変更済み -->
-    <model-viewer id="yuki"
-      src="Sample.glb"
-      ios-src="Sample.usdz"
-      alt="Sample avatar"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      camera-controls
-      autoplay
-      animation-loop
-      shadow-intensity="1"
-      exposure="1.0"
-      environment-image="neutral"
-      poster=""
-      touch-action="pan-y">
-    </model-viewer>
-
-    <div class="controls">
-      <button id="playAll">▶︎ Play all（順番に再生）</button>
-      <button id="pause">⏸ Pause</button>
-      <button id="resume">⏵ Resume</button>
-      <button id="reset">⟲ Reset</button>
-    </div>
-
-    <p class="note">
-      • AndroidのARではGLBのアニメが再生されます。<br/>
-      • iPhoneのAR（Quick Look）では <code>Sample.usdz</code> のアニメが再生されます。<br/>
-      • ページ内の表示はGLBのままでOKです。
-    </p>
-  </div>
-
-  <script>
-    const mv = document.querySelector('#yuki');
-    const btnPlayAll = document.querySelector('#playAll');
-    const btnPause = document.querySelector('#pause');
-    const btnResume = document.querySelector('#resume');
-    const btnReset = document.querySelector('#reset');
-
-    // 「全アニメ順次再生」を実装
-    let anims = [];
-    let idx = 0;
-    let playingAll = false;
-
-    function playNext() {
-      if (!playingAll || anims.length === 0) return;
-      const name = anims[idx % anims.length];
-      mv.animationName = name;
-      mv.play({ repetitions: 1 });
-    }
-
-    mv.addEventListener('load', () => {
-      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose');
-    });
-
-    mv.addEventListener('finished', () => {
-      if (!playingAll) return;
-      idx++;
-      playNext();
-    });
-
-    btnPlayAll.addEventListener('click', () => {
-      if (!anims.length) {
-        mv.play();
-        return;
-      }
-      playingAll = true;
-      idx = 0;
-      playNext();
-    });
-
-    btnPause.addEventListener('click', () => { mv.pause(); });
-    btnResume.addEventListener('click', () => { mv.play(); });
-    btnReset.addEventListener('click', () => {
-      playingAll = false;
-      mv.currentTime = 0;
-      mv.pause();
-    });
-  </script>
-</body>
-</html>
+  });
+</script>
