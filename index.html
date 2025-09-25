@@ -1,304 +1,231 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AR Avatars (iOS/Android)</title>
-
-  <!-- model-viewer 本体（CDN）-->
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-
+  <meta name="viewport" content="width=device-width, viewport-fit=cover, initial-scale=1.0">
+  <title>AR Avatars (4体・同時アニメ)</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans JP, sans-serif; }
-    header, footer { padding: 12px 16px; }
-    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .grid {
-      display: flex;
-      flex-wrap: nowrap;         /* 1列に並べる */
-      overflow-x: auto;          /* 画面が狭い時は横スクロール */
-      gap: 12px;
-      padding: 12px 16px;
-    }
-    .card {
-      min-width: 280px;
-      width: 25vw;               /* 4体横並び想定。画面幅に応じて調整 */
-      max-width: 420px;
-      border-radius: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-      overflow: hidden;
-      background: canvas;
-      display: flex;
-      flex-direction: column;
-    }
-    model-viewer {
-      width: 100%;
-      height: 360px;
-      background: #f5f5f7;
-    }
-    .card header {
-      padding: 10px 12px;
-      font-weight: 600;
-      font-size: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    html, body { margin:0; padding:0; height:100%; background:#000; }
+    #ui {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      display: flex; gap: 8px; padding: 12px;
+      justify-content: center; align-items: center;
+      pointer-events: none;
     }
     .btn {
-      appearance: none; border: 1px solid #ccc; background: #fff;
-      padding: 6px 10px; border-radius: 10px; font-size: 12px; cursor: pointer;
+      pointer-events: auto;
+      background: rgba(255,255,255,0.12);
+      color: #fff; border: 1px solid rgba(255,255,255,0.25);
+      padding: 10px 14px; border-radius: 12px; font-size: 14px;
+      backdrop-filter: blur(8px);
     }
-    .btn:active { transform: translateY(1px); }
-    .note { font-size: 12px; opacity: .7; }
+    #hint {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+      color: #fff; background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 10px;
+      font-size: 14px; display:none;
+    }
+    #reticle {
+      position: fixed; left: 50%; top: 50%; width: 40px; height: 40px;
+      margin-left: -20px; margin-top: -20px; border: 2px solid #00e0ff; border-radius: 50%;
+      display: none; box-shadow: 0 0 10px #00e0ff;
+    }
+    #fallback {
+      position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; color:#fff;
+    }
+    a.ar-quicklook {
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="controls">
-      <button id="playAll" class="btn">▶︎ Play all（全アバター）</button>
-      <button id="stopAll" class="btn">⏸ Stop all</button>
-      <span class="note">ARボタンから各端末のARで表示できます（iOSはUSDZ、AndroidはScene Viewer/WebXR）。</span>
-    </div>
-  </header>
-
-  <main class="grid">
-    <!-- Yossan -->
-    <section class="card">
-      <header>
-        <span>Yossan</span>
-        <span class="note" data-status="Yossan">—</span>
-      </header>
-      <model-viewer
-        id="mv-Yossan"
-        src="Yossan.glb"
-        ios-src="Yossan.usdz"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        ar-scale="fixed"
-        camera-controls
-        autoplay="false"
-        animation-loop="false"
-        exposure="1"
-        shadow-intensity="0.8"
-        touch-action="pan-y"
-        disable-zoom
-        environment-image="legacy"
-      >
-        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
-      </model-viewer>
-      <div style="display:flex; gap:8px; padding:10px 12px;">
-        <button class="btn" data-single-play="mv-Yossan">▶︎ このアバター再生</button>
-        <button class="btn" data-single-stop="mv-Yossan">⏸ 停止</button>
+  <div id="hint">平面を探しています… 見つかったらタップで4体を設置します</div>
+  <div id="reticle"></div>
+  <div id="ui">
+    <button id="startAR" class="btn">ARを開始</button>
+    <!-- iOS向け：4体まとめたUSDZをQuick Lookで開く（用意できる場合）-->
+    <a id="quickLookLink" class="btn ar-quicklook" rel="ar" href="AllAvatars.usdz" style="display:none;">
+      iOSで4体を表示（Quick Look）
+    </a>
+    <!-- 参考：各アバターを個別にQuick Lookで開く（任意）-->
+    <details class="btn" style="background:rgba(255,255,255,0.06);">
+      <summary>個別表示（iOS Quick Look）</summary>
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <a rel="ar" href="Yossan.usdz" class="btn">Yossan</a>
+        <a rel="ar" href="Atsushi.usdz" class="btn">Atsushi</a>
+        <a rel="ar" href="Shun.usdz" class="btn">Shun</a>
+        <a rel="ar" href="Yuki.usdz" class="btn">Yuki</a>
       </div>
-    </section>
+    </details>
+  </div>
+  <div id="fallback" style="display:none;">お使いのブラウザはWebXR ARに未対応です（iOSはQuick Lookボタンをご利用ください）。</div>
 
-    <!-- Atsushi -->
-    <section class="card">
-      <header>
-        <span>Atsushi</span>
-        <span class="note" data-status="Atsushi">—</span>
-      </header>
-      <model-viewer
-        id="mv-Atsushi"
-        src="Atsushi.glb"
-        ios-src="Atsushi.usdz"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        ar-scale="fixed"
-        camera-controls
-        autoplay="false"
-        animation-loop="false"
-        exposure="1"
-        shadow-intensity="0.8"
-        touch-action="pan-y"
-        disable-zoom
-        environment-image="legacy"
-      >
-        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
-      </model-viewer>
-      <div style="display:flex; gap:8px; padding:10px 12px;">
-        <button class="btn" data-single-play="mv-Atsushi">▶︎ このアバター再生</button>
-        <button class="btn" data-single-stop="mv-Atsushi">⏸ 停止</button>
-      </div>
-    </section>
+  <!-- Three.js (module) CDN -->
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+    import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
 
-    <!-- Shun -->
-    <section class="card">
-      <header>
-        <span>Shun</span>
-        <span class="note" data-status="Shun">—</span>
-      </header>
-      <model-viewer
-        id="mv-Shun"
-        src="Shun.glb"
-        ios-src="Shun.usdz"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        ar-scale="fixed"
-        camera-controls
-        autoplay="false"
-        animation-loop="false"
-        exposure="1"
-        shadow-intensity="0.8"
-        touch-action="pan-y"
-        disable-zoom
-        environment-image="legacy"
-      >
-        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
-      </model-viewer>
-      <div style="display:flex; gap:8px; padding:10px 12px;">
-        <button class="btn" data-single-play="mv-Shun">▶︎ このアバター再生</button>
-        <button class="btn" data-single-stop="mv-Shun">⏸ 停止</button>
-      </div>
-    </section>
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-    <!-- Yuki -->
-    <section class="card">
-      <header>
-        <span>Yuki</span>
-        <span class="note" data-status="Yuki">—</span>
-      </header>
-      <model-viewer
-        id="mv-Yuki"
-        src="Yuki.glb"
-        ios-src="Yuki.usdz"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        ar-scale="fixed"
-        camera-controls
-        autoplay="false"
-        animation-loop="false"
-        exposure="1"
-        shadow-intensity="0.8"
-        touch-action="pan-y"
-        disable-zoom
-        environment-image="legacy"
-      >
-        <button slot="ar-button" class="btn" style="position:absolute; left:12px; bottom:12px;">ARで表示</button>
-      </model-viewer>
-      <div style="display:flex; gap:8px; padding:10px 12px;">
-        <button class="btn" data-single-play="mv-Yuki">▶︎ このアバター再生</button>
-        <button class="btn" data-single-stop="mv-Yuki">⏸ 停止</button>
-      </div>
-    </section>
-  </main>
+    const canvasContainer = document.body;
+    const hintEl = document.getElementById('hint');
+    const reticleEl = document.getElementById('reticle');
+    const startBtn = document.getElementById('startAR');
+    const quickLookLink = document.getElementById('quickLookLink');
+    const fallbackMsg = document.getElementById('fallback');
 
-  <footer>
-    <span class="note">「▶︎ Play all」は各アバターに含まれる<strong>全アニメーションを順番に</strong>再生し、最後まで再生したら最初に戻って繰り返します。</span>
-  </footer>
+    // iOS配慮：Quick Lookボタンを露出
+    if (isIOS) {
+      quickLookLink.style.display = 'inline-block';
+    }
 
-  <script>
-    // --- 再生コントローラ ---
-    class AnimationCycler {
-      /**
-       * @param {HTMLModelViewerElement} mv
-       * @param {HTMLElement} statusEl
-       */
-      constructor(mv, statusEl) {
-        this.mv = mv;
-        this.statusEl = statusEl;
-        this.animations = [];
-        this.index = 0;
-        this.running = false;
+    // Three.js 基本セットアップ
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.xr.enabled = true;
+    canvasContainer.appendChild(renderer.domElement);
 
-        // アニメーション終了時に次へ
-        this.onFinished = () => {
-          if (!this.running) return;
-          this.next();
-        };
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
 
-        // モデル読み込み後にアニメーション一覧取得
-        mv.addEventListener('load', () => {
-          this.animations = mv.availableAnimations || [];
-          this.updateStatus();
-        });
+    // 環境光 & 方向光
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.0));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    dirLight.position.set(0, 5, 5);
+    scene.add(dirLight);
 
-        mv.addEventListener('finished', this.onFinished);
-      }
+    // 平面ヒットテスト用のReticle（実体）
+    const reticle = new THREE.Mesh(
+      new THREE.RingGeometry(0.08, 0.1, 32).rotateX(-Math.PI/2),
+      new THREE.MeshBasicMaterial({ color: 0x00e0ff })
+    );
+    reticle.matrixAutoUpdate = false;
+    reticle.visible = false;
+    scene.add(reticle);
 
-      updateStatus(text) {
-        if (!this.statusEl) return;
-        if (text) {
-          this.statusEl.textContent = text;
-        } else if (!this.animations.length) {
-          this.statusEl.textContent = 'アニメーションなし';
-        } else if (this.running) {
-          this.statusEl.textContent = `再生中：${this.animations[this.index]}`;
-        } else {
-          this.statusEl.textContent = `準備OK（${this.animations.length}個）`;
+    let xrHitTestSource = null;
+    let localSpace = null;
+    let placed = false;
+
+    // アバター4体を載せるグループ
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // アニメーション用
+    const mixers = [];
+
+    // GLBを読み込み、横一列に配置＆アニメ再生
+    async function loadAvatars() {
+      const loader = new GLTFLoader();
+      const files = [
+        { name: 'Yossan', src: 'Yossan.glb' },
+        { name: 'Atsushi', src: 'Atsushi.glb' },
+        { name: 'Shun',    src: 'Shun.glb' },
+        { name: 'Yuki',    src: 'Yuki.glb' },
+      ];
+      // 並びのオフセット（必要に応じて調整）
+      const spacing = 0.8; // 体と体の間隔
+      const startX = -((files.length - 1) * spacing) / 2;
+
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const gltf = await loader.loadAsync(f.src);
+        const avatar = gltf.scene;
+        // スケールはモデルに合わせて調整（必要なら変更）
+        avatar.scale.set(1, 1, 1);
+        avatar.position.set(startX + i * spacing, 0, 0);
+        group.add(avatar);
+
+        // アニメーションが入っていれば全部ループ再生
+        if (gltf.animations && gltf.animations.length > 0) {
+          const mixer = new THREE.AnimationMixer(avatar);
+          gltf.animations.forEach((clip) => {
+            const action = mixer.clipAction(clip);
+            action.loop = THREE.LoopRepeat;
+            action.clampWhenFinished = false;
+            action.play();
+          });
+          mixers.push(mixer);
         }
       }
+    }
 
-      async playAll() {
-        if (!this.animations.length) {
-          // 未ロードのケースに軽く再試行
-          await this.mv.updateComplete;
-          this.animations = this.mv.availableAnimations || [];
-          if (!this.animations.length) {
-            this.updateStatus('アニメーションが見つかりません');
-            return;
+    // 時間更新
+    const clock = new THREE.Clock();
+
+    // AR開始処理
+    async function startAR() {
+      // WebXR AR対応チェック
+      const supported = await navigator.xr?.isSessionSupported?.('immersive-ar');
+      if (!supported) {
+        // iOSはQuick Lookへ誘導、その他は非対応メッセージ
+        if (!isIOS) fallbackMsg.style.display = 'flex';
+        return;
+      }
+
+      document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
+
+      await loadAvatars();
+
+      renderer.setAnimationLoop((timestamp, frame) => {
+        const dt = clock.getDelta();
+        mixers.forEach(m => m.update(dt));
+
+        if (frame) {
+          const session = renderer.xr.getSession();
+          if (!xrHitTestSource) {
+            session.requestReferenceSpace('viewer').then((refSpace) => {
+              session.requestHitTestSource({ space: refSpace }).then((source) => {
+                xrHitTestSource = source;
+              });
+            });
+            session.requestReferenceSpace('local').then((refSpace) => {
+              localSpace = refSpace;
+            });
+          }
+
+          if (xrHitTestSource && localSpace) {
+            const hitTestResults = frame.getHitTestResults(xrHitTestSource);
+            if (hitTestResults.length > 0 && !placed) {
+              const hit = hitTestResults[0];
+              const pose = hit.getPose(localSpace);
+              reticle.visible = true;
+              reticle.matrix.fromArray(pose.transform.matrix);
+              reticleEl.style.display = 'block';
+              hintEl.style.display = 'block';
+            } else {
+              reticle.visible = false;
+              reticleEl.style.display = 'none';
+            }
           }
         }
-        this.running = true;
-        this.index = this.index % this.animations.length;
-        this.mv.animationName = this.animations[this.index];
-        this.mv.animationLoop = false; // 1回でfinishedイベントを受ける
-        this.mv.play();
-        this.updateStatus();
-      }
 
-      stop() {
-        this.running = false;
-        this.mv.pause();
-        this.updateStatus('停止中');
-      }
+        renderer.render(scene, camera);
+      });
 
-      next() {
-        if (!this.running || !this.animations.length) return;
-        this.index = (this.index + 1) % this.animations.length;
-        this.mv.animationName = this.animations[this.index];
-        this.mv.animationLoop = false;
-        this.mv.currentTime = 0;
-        this.mv.play();
-        this.updateStatus();
-      }
+      // タップで配置
+      renderer.domElement.addEventListener('click', () => {
+        if (!placed && reticle.visible) {
+          group.visible = true;
+          group.position.setFromMatrixPosition(reticle.matrix);
+          group.quaternion.setFromRotationMatrix(reticle.matrix);
+          placed = true;
+          hintEl.style.display = 'none';
+          reticleEl.style.display = 'none';
+        }
+      });
+
+      // 初期状態は非表示（配置時に出す）
+      group.visible = false;
     }
 
-    // --- 初期化 ---
-    const viewers = [
-      { id: 'mv-Yossan', label: 'Yossan' },
-      { id: 'mv-Atsushi', label: 'Atsushi' },
-      { id: 'mv-Shun',   label: 'Shun'   },
-      { id: 'mv-Yuki',   label: 'Yuki'   },
-    ];
+    startBtn.addEventListener('click', startAR);
 
-    const controllers = new Map();
-    for (const v of viewers) {
-      const mv = document.getElementById(v.id);
-      const statusEl = document.querySelector(`[data-status="${v.label}"]`);
-      controllers.set(v.id, new AnimationCycler(mv, statusEl));
-    }
-
-    // 個別再生/停止ボタン
-    document.querySelectorAll('[data-single-play]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-single-play');
-        controllers.get(id)?.playAll();
-      });
-    });
-    document.querySelectorAll('[data-single-stop]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-single-stop');
-        controllers.get(id)?.stop();
-      });
-    });
-
-    // 全体再生/停止
-    document.getElementById('playAll')?.addEventListener('click', () => {
-      controllers.forEach(c => c.playAll());
-    });
-    document.getElementById('stopAll')?.addEventListener('click', () => {
-      controllers.forEach(c => c.stop());
+    // リサイズ
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
 </body>
