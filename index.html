@@ -1,100 +1,106 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-    <title>AR Cross‑Platform Demo (iOS Quick Look / Android WebXR・Scene Viewer)</title>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KumejimaLab AR</title>
 
-    <!-- model-viewer は iOS Quick Look / Android WebXR / Scene Viewer を1タグで切替できます -->
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <style>
-      html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", sans-serif; }
-      .wrap { display: grid; place-items: center; height: 100%; background: #f6f7f9; }
-      .card { background: #fff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.08); width: min(96vw, 920px); }
-      header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-      h1 { font-size: clamp(18px, 3.5vw, 26px); margin: 0; }
-      p { color: #4b5563; margin: 0 0 16px; line-height: 1.6; }
-      model-viewer { width: 100%; height: min(70vh, 560px); background: #fff; border-radius: 12px; }
-      .notes { font-size: 12px; color: #6b7280; margin-top: 8px; }
-      .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
-      @media (min-width: 820px){ .row { grid-template-columns: 2fr 1fr; } }
-      .btns { display: flex; gap: 8px; flex-wrap: wrap; }
-      .btn { appearance: none; border: 1px solid #e5e7eb; background: #fff; border-radius: 999px; padding: 10px 14px; cursor: pointer; }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <div class="card">
-        <header>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z" stroke="#111827" stroke-width="1.5"/><circle cx="12" cy="12" r="3.5" stroke="#111827" stroke-width="1.5"/></svg>
-          <h1>ARデモ（4体アバター同時アニメーション）</h1>
-        </header>
-        <div class="row">
-          <model-viewer id="viewer"
-                        src="./Sample.glb"
-                        ios-src="./Sample.usdz"
-                        ar
-                        ar-modes="webxr scene-viewer quick-look"
-                        ar-scale="fixed"  
-                        camera-controls
-                        autoplay
-                        exposure="0.9"
-                        shadow-intensity="0.6"
-                        environment-image="neutral"
-                        poster=""
-                        alt="4体のアバターが同時にアニメーションするモデル">
-            <!-- iOS Quick Look 用：端末が iOS の場合は Apple のビューワにフォールバックします -->
-            <button slot="ar-button" class="btn" id="arButton">ARで表示</button>
-          </model-viewer>
-          <div>
-            <p>
-              このページは iPhone では <strong>Quick&nbsp;Look（USDZ）</strong>、Android では <strong>WebXR</strong> または <strong>Scene&nbsp;Viewer（GLB）</strong> で表示します。
-            </p>
-            <div class="btns">
-              <button class="btn" id="playAll">再生（全アニメ）</button>
-              <button class="btn" id="pauseAll">一時停止</button>
-              <button class="btn" id="reset">リセット</button>
-            </div>
-            <p class="notes">※ iOSのQuick&nbsp;Lookではページ側から個別アニメ制御はできません。USDZ内で自動再生・ループ設定をしてください。</p>
-          </div>
-        </div>
-      </div>
+  <!-- model-viewer 本体（CDN） -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body { margin:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+    model-viewer { width: 100%; height: 70vh; background: #f6f6f6; border-radius: 12px; }
+    .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    button { padding:10px 14px; border-radius:8px; border:1px solid #ddd; cursor:pointer; }
+    .note { color:#444; font-size: 14px; line-height:1.6; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>KumejimaLab - AR viewer</h1>
+
+    <!--
+      ポイント：
+      - src: GLB（ページ内＆Android向け）
+      - ios-src: iOS AR用のUSDZ（ユーザー提供: KumejimaLab_All.usdz）
+      - ar: ARボタン有効化
+      - ar-modes: WebXR/Scene Viewer/Quick Look を指定
+      - autoplay: 単一アニメの自動再生
+      - animation-loop: ループ
+    -->
+    <model-viewer id="lab"
+      src="KumejimaLab_All.glb"
+      ios-src="KumejimaLab_All.usdz"
+      alt="KumejimaLab avatars"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      autoplay
+      animation-loop
+      shadow-intensity="1"
+      exposure="1.0"
+      environment-image="neutral"
+      poster=""
+      touch-action="pan-y">
+    </model-viewer>
+
+    <div class="controls">
+      <button id="playAll">▶︎ Play all（順番に再生）</button>
+      <button id="pause">⏸ Pause</button>
+      <button id="resume">⏵ Resume</button>
+      <button id="reset">⟲ Reset</button>
     </div>
 
-    <script>
-      const mv = document.getElementById('viewer');
+    <p class="note">
+      • AndroidのARでは <code>KumejimaLab_All.glb</code> のアニメが再生されます。<br/>
+      • iPhoneのAR（Quick Look）では <code>KumejimaLab_All.usdz</code> のアニメが再生されます。<br/>
+      • ページ内の表示はGLBのままでOKです。
+    </p>
+  </div>
 
-      // Android/WebXR(ブラウザ内レンダ)では複数クリップの同時再生を試みます。
-      // Quick Lookはネイティブビューアに移行するため、下記制御は効きません。
-      let playedClips = [];
-      async function playAllClipsLoop() {
-        try {
-          await mv.updateComplete; // model-viewer の準備完了待ち
-          const clips = mv.animationNames || [];
-          // animationNames が空の場合でも、autoplay で既定クリップが再生されます。
-          playedClips = [];
-          for (const name of clips) {
-            // animationName を切り替えつつ play() を呼び、各クリップを連続起動
-            mv.animationName = name;
-            mv.play();
-            // ループ指定（属性 repetitions はグローバル。0 or Infinity 同等挙動）
-            mv.setAttribute('repetitions', 'infinite');
-            playedClips.push(name);
-          }
-          // 何も無ければ既定のアニメを再生
-          if (clips.length === 0) mv.play();
-        } catch(e){ console.warn(e); }
-      }
+  <script>
+    const mv = document.querySelector('#lab');
+    const btnPlayAll = document.querySelector('#playAll');
+    const btnPause = document.querySelector('#pause');
+    const btnResume = document.querySelector('#resume');
+    const btnReset = document.querySelector('#reset');
 
-      document.getElementById('playAll').addEventListener('click', playAllClipsLoop);
-      document.getElementById('pauseAll').addEventListener('click', () => mv.pause());
-      document.getElementById('reset').addEventListener('click', () => { mv.currentTime = 0; });
+    let anims = [];
+    let idx = 0;
+    let playingAll = false;
 
-      // 初期ロード時に一度試す（Quick Look には非対応）
-      mv.addEventListener('load', () => {
-        // iOS Quick Look に移行するケースではここで終わる
-        playAllClipsLoop();
-      });
-    </script>
-  </body>
+    function playNext() {
+      if (!playingAll || anims.length === 0) return;
+      const name = anims[idx % anims.length];
+      mv.animationName = name;
+      mv.play({ repetitions: 1 });
+    }
+
+    mv.addEventListener('load', () => {
+      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose');
+    });
+
+    mv.addEventListener('finished', () => {
+      if (!playingAll) return;
+      idx++;
+      playNext();
+    });
+
+    btnPlayAll.addEventListener('click', () => {
+      if (!anims.length) { mv.play(); return; }
+      playingAll = true;
+      idx = 0;
+      playNext();
+    });
+
+    btnPause.addEventListener('click', () => { mv.pause(); });
+    btnResume.addEventListener('click', () => { mv.play(); });
+    btnReset.addEventListener('click', () => {
+      playingAll = false;
+      mv.currentTime = 0;
+      mv.pause();
+    });
+  </script>
+</body>
 </html>
