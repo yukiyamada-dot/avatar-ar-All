@@ -9,10 +9,71 @@
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
   <style>
-    body { margin:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
-    model-viewer { width: 100%; height: 70vh; background: #f6f6f6; border-radius: 12px; }
-    .note { color:#444; font-size: 14px; line-height:1.6; margin-top:12px; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .viewer-wrap {
+      position: relative;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 70vh;
+      background: #f6f6f6;
+      border-radius: 12px;
+    }
+
+    .note {
+      color: #444;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    /* デフォルトの小さいARボタンを非表示にする */
+    model-viewer::part(ar-button) {
+      display: none;
+    }
+
+    /* 画面中央の大きな「AR体験」ボタン */
+    .ar-center-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 14px 32px;
+      border-radius: 999px;
+      border: none;
+      font-size: 18px;
+      font-weight: 600;
+      background: #007aff;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ar-center-button:active {
+      transform: translate(-50%, -50%) scale(0.97);
+    }
+
+    /* スマホ向けに少し小さく */
+    @media (max-width: 480px) {
+      .ar-center-button {
+        font-size: 16px;
+        padding: 12px 24px;
+      }
+    }
   </style>
 </head>
 
@@ -20,66 +81,48 @@
   <div class="wrap">
     <h1>KumejimaLab - AR viewer</h1>
 
-    <model-viewer id="lab"
-      src="KumejimaLab_All.glb"
-      ios-src="KumejimaLab_All.usdz"
-      alt="KumejimaLab avatars"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      ar-button-text="AR体験"
-      camera-controls
-      autoplay
-      animation-loop
-      shadow-intensity="1"
-      exposure="1.0"
-      environment-image="neutral"
-      poster=""
-      touch-action="pan-y">
-    </model-viewer>
+    <div class="viewer-wrap">
+      <model-viewer id="lab"
+        src="KumejimaLab_All.glb"
+        ios-src="KumejimaLab_All.usdz"
+        alt="KumejimaLab avatars"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        camera-controls
+        autoplay
+        animation-loop
+        shadow-intensity="1"
+        exposure="1.0"
+        environment-image="neutral"
+        poster=""
+        touch-action="pan-y">
+      </model-viewer>
+
+      <!-- 画面中央の大きなARボタン -->
+      <button id="customArButton" class="ar-center-button">
+        AR体験
+      </button>
+    </div>
 
     <p class="note">
-      • AndroidのARでは <code>KumejimaLab_All.glb</code> が利用されます。<br/>
-      • iPhoneのAR（Quick Look）では <code>KumejimaLab_All.usdz</code> が利用されます。<br/>
+      • AndroidのARでは <code>KumejimaLab_All.glb</code> が利用されます。<br>
+      • iPhoneのAR（Quick Look）では <code>KumejimaLab_All.usdz</code> が利用されます。<br>
       • ページ内の表示はGLBのままでOKです。
     </p>
   </div>
 
   <script>
     const mv = document.querySelector('#lab');
+    const customArButton = document.querySelector('#customArButton');
 
-    // 通常表示の元サイズを保存
-    const originalScale = { x: 1, y: 1, z: 1 };
-
-    // モデル読み込み時に元スケールを取得
-    mv.addEventListener('load', () => {
-      if (mv.model) {
-        originalScale.x = mv.model.scale.x;
-        originalScale.y = mv.model.scale.y;
-        originalScale.z = mv.model.scale.z;
-      }
-    });
-
-    // AR中だけモデルを縮小 (8% = 0.08)
-    mv.addEventListener('ar-status', (event) => {
-      // AR開始
-      if (event.detail.status === 'session-started') {
-        if (mv.model) {
-          mv.model.scale.set(0.08, 0.08, 0.08);  // ← 8%に縮小
-        }
-      }
-
-      // AR終了
-      if (event.detail.status === 'not-presenting') {
-        if (mv.model) {
-          mv.model.scale.set(
-            originalScale.x,
-            originalScale.y,
-            originalScale.z
-          ); // 元サイズに戻す
-        }
+    // 中央の大きなボタンからARを起動
+    customArButton.addEventListener('click', () => {
+      if (mv.canActivateAR) {
+        mv.activateAR();
+      } else {
+        alert('この端末またはブラウザはARに対応していません。');
       }
     });
   </script>
-
 </body>
 </html>
