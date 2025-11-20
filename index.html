@@ -7,6 +7,7 @@
 
   <!-- model-viewer 本体（CDN） -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
   <style>
     body { margin:0; font-family:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
     .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
@@ -14,6 +15,7 @@
     .note { color:#444; font-size: 14px; line-height:1.6; margin-top:12px; }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <h1>KumejimaLab - AR viewer</h1>
@@ -45,13 +47,39 @@
   <script>
     const mv = document.querySelector('#lab');
 
+    // 通常表示の元サイズを保存
+    const originalScale = { x: 1, y: 1, z: 1 };
+
+    // モデル読み込み時に元スケールを取得
     mv.addEventListener('load', () => {
-      // ▼ ARモデルを1/16スケールにする（0.0625 = 1/16）
-      const root = mv.model?.getMaterial?.('') ? mv.model : mv.scene;
       if (mv.model) {
-        mv.model.scale.set(0.0625, 0.0625, 0.0625);
+        originalScale.x = mv.model.scale.x;
+        originalScale.y = mv.model.scale.y;
+        originalScale.z = mv.model.scale.z;
+      }
+    });
+
+    // AR中だけモデルを縮小 (8% = 0.08)
+    mv.addEventListener('ar-status', (event) => {
+      // AR開始
+      if (event.detail.status === 'session-started') {
+        if (mv.model) {
+          mv.model.scale.set(0.08, 0.08, 0.08);  // ← 8%に縮小
+        }
+      }
+
+      // AR終了
+      if (event.detail.status === 'not-presenting') {
+        if (mv.model) {
+          mv.model.scale.set(
+            originalScale.x,
+            originalScale.y,
+            originalScale.z
+          ); // 元サイズに戻す
+        }
       }
     });
   </script>
+
 </body>
 </html>
