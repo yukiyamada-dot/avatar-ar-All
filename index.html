@@ -24,6 +24,7 @@
       alt="KumejimaLab avatars"
       ar
       ar-modes="webxr scene-viewer quick-look"
+      ar-button-text="AR体験"
       camera-controls
       autoplay
       animation-loop
@@ -31,24 +32,25 @@
       exposure="1.0"
       environment-image="neutral"
       poster=""
-      touch-action="pan-y"
-      ar-button-text="AR体験">
+      touch-action="pan-y">
     </model-viewer>
 
     <p class="note">
-      • AndroidのARでは <code>KumejimaLab_All.glb</code> のアニメが再生されます。<br/>
-      • iPhoneのAR（Quick Look）では <code>KumejimaLab_All.usdz</code> のアニメが再生されます。<br/>
+      • AndroidのARでは <code>KumejimaLab_All.glb</code> が利用されます。<br/>
+      • iPhoneのAR（Quick Look）では <code>KumejimaLab_All.usdz</code> が利用されます。<br/>
       • ページ内の表示はGLBのままでOKです。
     </p>
   </div>
 
   <script>
     const mv = document.querySelector('#lab');
-    let anims = [];
 
     mv.addEventListener('load', () => {
-      anims = (mv.availableAnimations || []).filter(n => n !== 'TPose');
-      // autoplay を維持するので特に追加操作は不要
+      // ▼ ARモデルを1/16スケールにする（0.0625 = 1/16）
+      const root = mv.model?.getMaterial?.('') ? mv.model : mv.scene;
+      if (mv.model) {
+        mv.model.scale.set(0.0625, 0.0625, 0.0625);
+      }
     });
   </script>
 </body>
